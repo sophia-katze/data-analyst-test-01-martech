@@ -7,7 +7,7 @@ Bem-vindo ao repositório do Case de Análise de Dados da Fatal Model, desenvolv
 ## 📋 Estrutura Geral do Repositório
 
 ```
-fatalmodel-case/
+data-analyst-test-01-martech/
 ├── README.md                  # Documentação completa do projeto
 ├── data/                      # Dados brutos (CSV originais)
 │   ├── users.csv             # Informações de usuários/anunciantes
