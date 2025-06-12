@@ -9,22 +9,26 @@ Bem-vindo ao repositório do Case de Análise de Dados da Fatal Model, desenvolv
 ```
 data-analyst-test-01-martech/
 ├── README.md                  # Documentação completa do projeto
-├── data/                      # Dados brutos (CSV originais)
-│   ├── users.csv             # Informações de usuários/anunciantes
-│   └── user_transactions.csv # Histórico de transações
+├── requirements.txt           # Bibliotecas necessárias
+├── data/                      # Dados brutos (CSV originais Zipados)
+│   └──datasets.7z
+│      ├── users.csv             # Informações de usuários/anunciantes
+│      └── user_transactions.csv # Histórico de transações
 ├── sql/                       # Scripts SQL organizados por etapa analítica
 │   ├── 01_user_status.sql          # Cálculo de status de usuário (ativos, banidos)
 │   ├── 02_daily_sales.sql          # Vendas diárias e sazonalidade
-│   ├── 03_spend_per_user.sql       # Usuários pagantes e ARPU
-│   ├── 04_monthly_revenue.sql      # Receita por mês
-│   ├── 05_promotion_period.sql     # Identificação do período promocional
-│   ├── 06_promotion_impact.sql     # Impacto da promoção em receita e transações
-│   └── 07_discount_simulation.sql  # Simulação de receita líquida para níveis de desconto
-├── notebooks/                 # Jupyter Notebooks para storytelling e visualizações
-│   └── analysis.ipynb         # Carga de dados, consultas SQL e plots Seaborn
+│   ├── 03_sales_by_weekday.sql     # Vendas por dia da semana
+│   ├── 04_spend_per_user.sql       # Usuários pagantes e ARPU
+│   ├── 05_monthly_revenue.sql      # Receita por mês
+│   ├── 06_promotion_period.sql     # Identificação do período promocional
+│   ├── 07_promotion_impact.sql     # Impacto da promoção em receita e transações
+│   ├── 08_discount_simulation.sql  # Simulação de receita líquida para níveis de desconto
+│   ├── clean_user_transactions.sql # Limpeza do dataset de transações
+│   └── clean_users.sql             # Limpeza do dataset de usuários
 ├── scripts/                   # Scripts auxiliares em Python
 │   └── promo_simulation.py    # Simulação Monte Carlo de desconto ideal
-└── LICENSE                    # Licença MIT
+└── analysis.ipynb             # Jupyter Notebook principal com Carga de dados, consultas SQL e plots Seaborn
+
 ```
 
 ---
@@ -109,23 +113,21 @@ Ao longo do **notebook** (`analysis.ipynb`), cada seção começa com uma pergun
 2. Instale dependências:
 
    ```bash
-   pip install pandas seaborn matplotlib sqlite3
+   pip install -r requirements.txt
    ```
-3. Abra o Jupyter Notebook:
+3. Abra o Jupyter Notebook via prompt:
 
    ```bash
-   jupyter notebook notebooks/analysis.ipynb
+   jupyter notebook analysis.ipynb
    ```
+\N **Ou na sua IDE FAVORITA**
+
 4. Execute células sequencialmente: as queries SQL rodarão contra um banco SQLite em memória, e os plots Seaborn serão gerados inline.
 
 ---
 
 ## 🤝 Contato
 
-Para dúvidas, abra uma *issue* ou contate **Patrícia Souza**: [patricia.souza@atlastechnol.com](mailto:patricia.souza@atlastechnol.com)
+Para dúvidas, abra uma *issue* ou contate **Sophia Katze**: [sophia.helena.paula@gmail.com](mailto:sophia.helena.paula@gmail.com)
 
 ---
-
-## 📄 Licença
-
-Este projeto está licenciado sob a **MIT License**. Consulte o arquivo `LICENSE` para detalhes.
