@@ -69,15 +69,17 @@ Ao longo do **notebook** (`analysis.ipynb`), cada seção começa com uma pergun
 
 1. **Carga e inspeção inicial**
 
+   * Unzip do Dataset
    * Importar CSVs em pandas.
    * Explorar colunas e tipos de dados.
 2. **Transformação com SQL**
 
-   * Utilizar `sqlite3` ou conexão a BD para executar scripts em `sql/`.
+   * Utilizar `pandasql` ou conexão a BD para executar scripts em `sql/`.
+   * Limpar dados de duplicatas e fazer análise de NULLs
    * Criar views para cada CTE e importar resultados ao notebook.
 3. **Visualização com Seaborn**
 
-   * Plotar gráficos de barras, linhas e mapas de calor.
+   * Plotar gráficos de barras e linhas.
    * Anotar insights diretamente nos plots.
 4. **Simulações e recomendações**
 
@@ -97,8 +99,8 @@ Ao longo do **notebook** (`analysis.ipynb`), cada seção começa com uma pergun
 
 ## 📑 Notebooks e Scripts
 
-* **notebooks/analysis.ipynb**: Notebook completo com narrativa, queries e viz.
-* **scripts/promo\_simulation.py**: Simulação Monte Carlo para avaliação de níveis de desconto.
+* **analysis.ipynb**: Notebook completo com narrativa, queries e viz.
+* **scripts/promo_simulation.py**: Simulação Monte Carlo para avaliação de níveis de desconto.
 
 ---
 
@@ -107,8 +109,8 @@ Ao longo do **notebook** (`analysis.ipynb`), cada seção começa com uma pergun
 1. Clone o repositório:
 
    ```bash
-   git clone https://github.com/seu-usuario/fatalmodel-case.git
-   cd fatalmodel-case
+   git clone https://github.com/sophia-katze/data-analyst-test-01-martech
+   cd data-analyst-test-01-martech
    ```
 2. Instale dependências:
 
@@ -120,7 +122,6 @@ Ao longo do **notebook** (`analysis.ipynb`), cada seção começa com uma pergun
    ```bash
    jupyter notebook analysis.ipynb
    ```
-\N **Ou na sua IDE FAVORITA**
 
 4. Execute células sequencialmente: as queries SQL rodarão contra um banco SQLite em memória, e os plots Seaborn serão gerados inline.
 
