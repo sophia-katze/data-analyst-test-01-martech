@@ -1,105 +1,107 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, date_format, count
-import numpy as np
+# =============================================================================
+# Arquivo: scripts/promo_simulation_refactored.py
+# Descrição: Módulo para detectar períodos promocionais e simular receita líquida
+#             utilizando pandas e scikit-learn para amostragem.
+# Autor: Sophia Katze de Paula
+# Data: 2025-06-12
+# Observação: Refatorado para usar pandas e sklearn.utils.resample em vez de numpy puro.
+# =============================================================================
+
 import pandas as pd
+from sklearn.utils import resample
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# scripts/promo_simulation.py
-# Autor: Sophia Katze de Paula 
-# Data: 2025-06-11
-# Este módulo oferece funções para identificar o período promocional
-# e simular receitas líquidas para diferentes níveis de desconto
+# ---------------------------------------------------------------------------------
+# Função: carregar_transacoes_pandas
+# Descrição: Lê CSV de transações e retorna DataFrame Pandas com colunas normalizadas
+# Parâmetros:
+#   caminho_csv (str): caminho para o arquivo CSV de transações
+# Retorno:
+#   pd.DataFrame: DataFrame com coluna 'data_tx' e demais originais renomeadas
+# ---------------------------------------------------------------------------------
+def carregar_transacoes_pandas(caminho_csv: str) -> pd.DataFrame:
+    df = (pd.read_csv(caminho_csv, parse_dates=['created_at'])
+            .rename(columns={'created_at': 'data_tx'}))
+    return df
 
-# Cria ou retorna SparkSession existente
-def obter_spark(app_name="PromoSimulation"):
-    """Inicializa e retorna uma SparkSession."""
-    return SparkSession.builder.appName(app_name).getOrCreate()
-
-# Função para carregar transações como DataFrame Spark
-def carregar_transacoes_spark(spark: SparkSession, caminho_csv: str):
-    """Lê o CSV de user_transactions em um DataFrame Spark com schema inferido."""
-    return (
-        spark.read
-             .option("header", True)
-             .option("inferSchema", True)
-             .csv(caminho_csv)
-             .withColumn("data_tx", col("created_at").cast("date"))
-    )
-
-# Identifica período de promoção com desconto médio >= limite
-def identificar_periodo_promocional(df_transacoes, limite_desconto=0.85):
-    """
-    Retorna a data de início e fim onde o desconto médio diário >= limite_desconto.
-    - df_transacoes: DataFrame Spark contendo colunas 'data_tx' e 'discount_percent'.
-    - limite_desconto: float entre 0 e 1, ex: 0.85 para 85%.
-    """
-    # Calcula desconto médio por dia
-    df_desconto = (
-        df_transacoes
-            .groupBy("data_tx")
-            .agg({'discount_percent':'avg'})
-            .withColumnRenamed('avg(discount_percent)', 'desconto_medio')
-    )
-    # Filtra dias promocionais
-    dias = (
-        df_desconto
-            .filter(col('desconto_medio') >= limite_desconto)
-            .select('data_tx')
-            .orderBy('data_tx')
-            .toPandas()
-    )
-    if dias.empty:
+# ---------------------------------------------------------------------------------
+# Função: identificar_periodo_promocional
+# Descrição: Identifica intervalo de datas em que o desconto médio diário excede limite
+# Parâmetros:
+#   df_transacoes (pd.DataFrame): DataFrame contendo 'data_tx' e 'discount_percent'
+#   limite_desconto (float): valor entre 0 e 1 que define promoção (ex: 0.85)
+# Retorno:
+#   tupla(pd.Timestamp|None, pd.Timestamp|None): (data_inicio, data_fim) da promoção
+# ---------------------------------------------------------------------------------
+def identificar_periodo_promocional(df_transacoes: pd.DataFrame,
+                                   limite_desconto: float = 0.85):
+    # Agrupa por dia calculando desconto médio
+    df_avg = (df_transacoes
+              .groupby('data_tx')['discount_percent']
+              .mean()
+              .reset_index(name='avg_discount'))
+    
+    # Filtra dias que atendem ao critério
+    mask = df_avg['avg_discount'] >= (limite_desconto * 100)
+    dias_promocao = df_avg.loc[mask, 'data_tx']
+    
+    # Retorna intervalo ou None
+    if dias_promocao.empty:
         return None, None
-    return dias['data_tx'].min(), dias['data_tx'].max()
+    return dias_promocao.min(), dias_promocao.max()
 
-# Simulação Monte Carlo de receita líquida
-def simular_receita_descontos(df_transacoes, periodo, niveis_desconto, n_sim=5000):
-    """
-    Realiza simulações de receita líquida para cada nível de desconto.
-    - df_transacoes: DataFrame Spark com colunas 'data_tx' e 'full_value'.
-    - periodo: tupla (data_inicio, data_fim).
-    - niveis_desconto: lista de inteiros [0,10,...,90].
-    - n_sim: número de iterações Monte Carlo.
-    Retorna DataFrame pandas com resultado para cada desconto.
-    """
+# ---------------------------------------------------------------------------------
+# Função: simular_receita_descontos
+# Descrição: Executa bootstrap via sklearn para simular receita líquida
+# Parâmetros:
+#   df_transacoes (pd.DataFrame): deve conter 'data_tx' e 'full_value'
+#   periodo (tuple): (data_inicio, data_fim) para filtrar simulação
+#   niveis_desconto (list): lista de descontos em % (0-100)
+#   n_sim (int): número de amostras bootstrap
+# Retorno:
+#   pd.DataFrame: métricas de receita para cada nível de desconto
+# ---------------------------------------------------------------------------------
+def simular_receita_descontos(df_transacoes: pd.DataFrame,
+                              periodo: tuple,
+                              niveis_desconto: list,
+                              n_sim: int = 5000) -> pd.DataFrame:
     inicio, fim = periodo
-    # Filtra transações dentro do período promocional
-    df_promo = df_transacoes.filter((col('data_tx') >= inicio) & (col('data_tx') <= fim))
-    # Coleta no driver contagens diárias e valores cheios
-    contagens_diarias = (
-        df_promo
-            .groupBy('data_tx')
-            .agg(count('*').alias('qtd_tx'))
-            .select('qtd_tx')
-            .toPandas()['qtd_tx'].values
-    )
-    valores_cheios = df_promo.select('full_value').toPandas()['full_value'].values
-
+    # Filtra transações no período
+    df_promo = df_transacoes.loc[
+        (df_transacoes['data_tx'] >= inicio) &
+        (df_transacoes['data_tx'] <= fim)
+    ]
+    
+    # Prepara dados para bootstrap
+    valores = df_promo['full_value']
     resultados = []
-    for d in niveis_desconto:
-        receita_media = []
+    
+    for desc in niveis_desconto:
+        medias = []
         for _ in range(n_sim):
-            tx = np.random.choice(contagens_diarias)
-            amostra = np.random.choice(valores_cheios, size=tx, replace=True)
-            liquido = amostra.sum() * (1 - d/100)
-            receita_media.append(liquido)
+            # Amostragem com reposição
+            amostra = resample(valores, replace=True, n_samples=len(valores))
+            receita = amostra.sum() * (1 - desc/100)
+            medias.append(receita)
         resultados.append({
-            'discount_pct': d,
-            'mean_revenue': np.mean(receita_media),
-            'revenue_5th_pct': np.percentile(receita_media, 5),
-            'revenue_95th_pct': np.percentile(receita_media, 95)
+            'discount_pct': desc,
+            'mean_revenue': pd.Series(medias).mean(),
+            'revenue_5th_pct': pd.Series(medias).quantile(0.05),
+            'revenue_95th_pct': pd.Series(medias).quantile(0.95)
         })
     return pd.DataFrame(resultados)
 
-# Plot dos resultados de simulação
-def plotar_simulacao(df_resultados):
-    """
-    Gera gráfico de receita média e intervalo de confiança (5-95%).
-    - df_resultados: DataFrame pandas com colunas 'discount_pct', 'mean_revenue', 'revenue_5th_pct', 'revenue_95th_pct'.
-    """
+# ---------------------------------------------------------------------------------
+# Função: plotar_simulacao
+# Descrição: Plota resultados da simulação de receita versus desconto
+# Parâmetros:
+#   df_resultados (pd.DataFrame): colunas 'discount_pct', 'mean_revenue',
+#                                 'revenue_5th_pct', 'revenue_95th_pct'
+# ---------------------------------------------------------------------------------
+def plotar_simulacao(df_resultados: pd.DataFrame):
     sns.set_theme(style='whitegrid')
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10, 6))
     plt.plot(df_resultados['discount_pct'], df_resultados['mean_revenue'], marker='o', label='Receita Média')
     plt.fill_between(
         df_resultados['discount_pct'],
@@ -108,9 +110,9 @@ def plotar_simulacao(df_resultados):
         alpha=0.3,
         label='Intervalo 5-95%'
     )
-    plt.xlabel('Percentual de Desconto')
-    plt.ylabel('Receita Líquida (R$)')
-    plt.title('Simulação Monte Carlo: Receita vs Desconto')
+    plt.xlabel('Percentual de Desconto (%)')
+    plt.ylabel('Receita Líquida')
+    plt.title('Simulação Monte Carlo de Receita vs Desconto')
     plt.legend()
     plt.tight_layout()
     plt.show()
