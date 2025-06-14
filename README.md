@@ -35,7 +35,7 @@ data-analyst-test-01-martech/
 
 ## 📖 Contexto Inicial e Storytelling
 
-A **Fatal Model** é uma plataforma B2C que conecta anunciantes (acompanhantes) a clientes, oferecendo planos pagos que aumentam a visibilidade dos anúncios. Cada plano (3, 7 ou 30 dias) adiciona pontos de listagem: mais pontos, maior ranqueamento. Usuários também podem usar a plataforma gratuitamente.
+A **Fatal Model** é uma plataforma B2C que conecta anunciantes a clientes, oferecendo planos pagos que aumentam a visibilidade dos anúncios. Cada plano (3, 7 ou 30 dias) adiciona pontos de listagem: mais pontos, maior ranqueamento. Usuários também podem usar a plataforma gratuitamente.
 
 **Storytelling** começa apresentando o cenário de negócio:
 
