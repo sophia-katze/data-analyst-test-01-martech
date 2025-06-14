@@ -1,4 +1,4 @@
-# Atlas Techonologies Marjeting Data Analysis Case
+# Atlas Techonologies Marketing Data Analysis Case
 
 Bem-vindo ao repositório do Case de Análise de Dados de marketing, desenvolvido para a Atlas Technologies. Este projeto simula um contexto real de análise de dados em uma plataforma B2C, com foco em entender o comportamento dos anunciantes, métricas de engajamento e avaliar uma promoção histórica usando **SQL** para extração/transformação e **Python (Seaborn)** para visualização.
 
